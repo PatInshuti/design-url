@@ -67,6 +67,11 @@
       <artifactId>surefire-junit-platform</artifactId>
       <version>2.22.2</version>
     </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>LATEST</version>
+    </dependency>
   </dependencies>
 
   <build>

@@ -10,9 +10,8 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import com.system_design_url.starter.services.registerURL;
-import com.system_design_url.starter.db.DatabaseUtil;
 
-import java.sql.Connection;
+import java.sql.SQLException;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -42,7 +41,11 @@ public class MainVerticle extends AbstractVerticle {
       body.onComplete(requestBody->{
         JsonObject req = requestBody.result().toJsonObject();
         String longUrl = req.getString("longUrl");
-        ctx.response().putHeader("Content-Type","plain/text").end(registerURL.register(longUrl));
+        try {
+          ctx.response().putHeader("Content-Type","plain/text").end(registerURL.register(longUrl));
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
       });
 
     });

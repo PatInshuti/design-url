@@ -1,17 +1,19 @@
 package com.system_design_url.starter.db;
 
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-public class DatabaseUtil extends AbstractVerticle{
+public class DatabaseUtil {
     Logger log = LoggerFactory.getLogger(DatabaseUtil.class);
     private static DatabaseUtil instance = null;
     private static Connection conn = null;
 
     private DatabaseUtil() {
+
 
         if(conn == null) {
 
@@ -28,8 +30,20 @@ public class DatabaseUtil extends AbstractVerticle{
         if(instance == null) instance = new DatabaseUtil();
     }
 
-    public static Connection getConnection() {
+    public static void initializeDbSchema() throws SQLException {
+        // Save shortUrl, longUrl in DB
+        String createTable = "CREATE TABLE IF NOT EXISTS Urls ( \n"
+                + "   long_url text PRIMARY KEY,\n"
+                + "   short_url text\n"
+                + ")";
+
+        Statement smt = conn.createStatement();
+        smt.executeUpdate(createTable);
+    }
+
+    public static Connection getConnection() throws SQLException {
         createInstance();
+        initializeDbSchema();
         return conn;
     }
 }

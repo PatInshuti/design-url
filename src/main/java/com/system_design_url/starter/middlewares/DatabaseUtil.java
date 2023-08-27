@@ -1,4 +1,4 @@
-package com.system_design_url.starter.db;
+package com.system_design_url.starter.middlewares;
 
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;

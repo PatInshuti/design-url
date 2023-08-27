@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import com.system_design_url.starter.services.registerURL;
-import com.system_design_url.starter.db.DatabaseUtil;
+import com.system_design_url.starter.middlewares.DatabaseUtil;
 
 
 

@@ -1,5 +1,5 @@
 package com.system_design_url.starter.services;
-import com.system_design_url.starter.db.DatabaseUtil;
+import com.system_design_url.starter.middlewares.DatabaseUtil;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import org.apache.commons.lang.RandomStringUtils;

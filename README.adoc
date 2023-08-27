@@ -4,12 +4,18 @@ image:https://img.shields.io/badge/vert.x-4.4.4-purple.svg[link="https://vertx.i
 
 This application was generated using http://start.vertx.io
 
-== Building
+== Requirements
+  - Install SQLite
+  - Install Redis
 
-To launch your tests:
+== In-Memory Cache
+
+To Start Redis DB
 ```
-./mvnw clean test
+./redis-server --port 6379
 ```
+
+== Server
 
 To package your application:
 ```

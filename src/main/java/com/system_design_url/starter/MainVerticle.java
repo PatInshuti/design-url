@@ -13,6 +13,9 @@ import io.vertx.ext.web.Router;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import com.system_design_url.starter.services.registerURL;
 import com.system_design_url.starter.db.DatabaseUtil;
 
@@ -34,15 +37,33 @@ public class MainVerticle extends AbstractVerticle {
     HttpServer server = vertx.createHttpServer();
     Router router = Router.router(vertx);
     Connection conn = DatabaseUtil.getConnection();
+    JedisPool jedisPool = new JedisPool("127.0.0.1",6379);
 
-    router.route(HttpMethod.GET, "/url/:shortUrl").handler(ctx->{
+    router.route(HttpMethod.GET, "/:shortUrl").handler(ctx->{
       String shortUrl = ctx.request().getParam("shortUrl");
+
+      // check if mapping from shortUrl to longUrl is in cache
+      try( Jedis jedis = jedisPool.getResource() ){
+        if(jedis.exists(shortUrl)) {
+          ctx.redirect(jedis.get(shortUrl), (res) -> { log.info("Found URL in cache \n"); } );
+          return;
+        }
+      }
 
       try {
         ResultSet result = registerURL.checkUrlExistsInDb("short_url", shortUrl, conn);
         if(result.next()){
           String longUrl = result.getString("long_url");
+
+          // add long url to cache
+          try( Jedis jedis = jedisPool.getResource() ) {
+            jedis.configSet("maxmemory","100mb");
+            jedis.configSet ("maxmemory-policy","allkeys-lfu");
+            jedis.set(shortUrl, longUrl);
+          }
+
           ctx.redirect(longUrl, (res)-> log.info("Successful redirect \n"));
+          return;
         }
 
         ctx.response().putHeader("Content-Type","text/plain").end("URL not found \n");
@@ -51,7 +72,7 @@ public class MainVerticle extends AbstractVerticle {
 
     });
 
-    router.route(HttpMethod.POST, "/url").handler(ctx ->{
+    router.route(HttpMethod.POST, "/").handler(ctx ->{
 
       // Register URL with long URL
       Future<Buffer> body = ctx.request().body();

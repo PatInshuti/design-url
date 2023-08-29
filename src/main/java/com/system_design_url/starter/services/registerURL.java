@@ -1,5 +1,6 @@
 package com.system_design_url.starter.services;
 import com.system_design_url.starter.middlewares.DatabaseUtil;
+import io.rebloom.client.Client;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import org.apache.commons.lang.RandomStringUtils;
@@ -8,6 +9,9 @@ import java.sql.*;
 
 
 public class registerURL {
+
+  public static Client bloomFilter = new Client(Utils.localHost, 6379);
+
   private static final Logger log = LoggerFactory.getLogger(registerURL.class);
 
   public static String register(String longUrl) throws SQLException {
@@ -21,6 +25,8 @@ public class registerURL {
     String shortUrl = encode(longUrl);
     int insertedRows = saveEncodedUrlInDb(longUrl, shortUrl, conn);
     if(insertedRows < 1) throw new SQLException("Unable to Insert a new Record \n");
+
+    bloomFilter.add(Utils.bloomFilter.SHORT_URL.name(), shortUrl);
     return shortUrl;
   }
 

@@ -14,7 +14,6 @@ public class DatabaseUtil {
 
     private DatabaseUtil() {
 
-
         if(conn == null) {
 
             try{

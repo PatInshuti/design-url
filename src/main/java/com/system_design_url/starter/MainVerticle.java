@@ -1,5 +1,6 @@
 package com.system_design_url.starter;
 
+import com.system_design_url.starter.utils.Utils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
@@ -9,13 +10,11 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.*;
+import io.rebloom.client.Client;
 import com.system_design_url.starter.services.registerURL;
 import com.system_design_url.starter.middlewares.DatabaseUtil;
 
@@ -24,6 +23,7 @@ import com.system_design_url.starter.middlewares.DatabaseUtil;
 public class MainVerticle extends AbstractVerticle {
 
   Logger log = LoggerFactory.getLogger(MainVerticle.class);
+
 
   /*
   * Post Request with long URL --> encode URL -> Write to DB -> Return short URL
@@ -36,11 +36,19 @@ public class MainVerticle extends AbstractVerticle {
 
     HttpServer server = vertx.createHttpServer();
     Router router = Router.router(vertx);
+
     Connection conn = DatabaseUtil.getConnection();
-    JedisPool jedisPool = new JedisPool("127.0.0.1",6379);
+    JedisPool jedisPool = new JedisPool(Utils.localHost,6379);
+    Client bloomFilter = new Client(Utils.localHost, 6379);
 
     router.route(HttpMethod.GET, "/:shortUrl").handler(ctx->{
       String shortUrl = ctx.request().getParam("shortUrl");
+
+      // check if the shortUrl is in bloom filter
+      if (!bloomFilter.exists(Utils.bloomFilter.SHORT_URL.name(), shortUrl)) {
+        ctx.response().putHeader("Content-Type","text/plain").end("URL not found \n");
+        return;
+      }
 
       // check if mapping from shortUrl to longUrl is in cache
       try( Jedis jedis = jedisPool.getResource() ){
@@ -50,6 +58,7 @@ public class MainVerticle extends AbstractVerticle {
         }
       }
 
+      // check existance of short_url in database
       try {
         ResultSet result = registerURL.checkUrlExistsInDb("short_url", shortUrl, conn);
         if(result.next()){
@@ -61,12 +70,8 @@ public class MainVerticle extends AbstractVerticle {
             jedis.configSet ("maxmemory-policy","allkeys-lfu");
             jedis.set(shortUrl, longUrl);
           }
-
           ctx.redirect(longUrl, (res)-> log.info("Successful redirect \n"));
-          return;
         }
-
-        ctx.response().putHeader("Content-Type","text/plain").end("URL not found \n");
       }
       catch (SQLException e) { throw new RuntimeException(e); }
 
@@ -80,6 +85,7 @@ public class MainVerticle extends AbstractVerticle {
       body.onComplete(requestBody->{
         JsonObject req = requestBody.result().toJsonObject();
         String longUrl = req.getString("longUrl");
+
         try {
           ctx.response().putHeader("Content-Type","plain/text").end(registerURL.register(longUrl));
         } catch (SQLException e) {

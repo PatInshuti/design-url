@@ -6,13 +6,13 @@ This application was generated using http://start.vertx.io
 
 == Requirements
   - Install SQLite
-  - Install Redis
+  - Install https://redis.io/docs/getting-started/install-stack/[Redis/Redis-Stack]
 
 == In-Memory Cache
 
 To Start Redis DB
 ```
-./redis-server --port 6379
+./redis-stack-server --port 6379
 ```
 
 == Server
